@@ -8,6 +8,7 @@ final class ClipboardMonitor {
     private var lastChangeCount: Int
     private var lastTextHash: String = ""
     private var lastImageHash: String = ""
+    private var suppressedChangeCount = 0
     private let clipRepo: ClipRepository
 
     /// Called on the main thread when a new clip is inserted
@@ -29,11 +30,24 @@ final class ClipboardMonitor {
         timer = nil
     }
 
+    func processClipboardNow() {
+        checkClipboard()
+    }
+
+    func suppressNextChanges(_ count: Int) {
+        suppressedChangeCount = max(suppressedChangeCount, count)
+    }
+
     private func checkClipboard() {
         let pasteboard = NSPasteboard.general
         let currentCount = pasteboard.changeCount
         guard currentCount != lastChangeCount else { return }
         lastChangeCount = currentCount
+
+        if suppressedChangeCount > 0 {
+            suppressedChangeCount -= 1
+            return
+        }
 
         // Check for text
         if let text = pasteboard.string(forType: .string), !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

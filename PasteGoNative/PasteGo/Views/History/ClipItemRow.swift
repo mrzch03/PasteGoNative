@@ -39,25 +39,30 @@ struct ClipItemRow: View {
     // MARK: - Select Zone
 
     private var selectZone: some View {
-        Button(action: onToggleSelect) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 4)
-                    .strokeBorder(isSelected ? Color.accentColor : Color.secondary.opacity(0.3), lineWidth: 1.5)
-                    .frame(width: 18, height: 18)
-                    .background(
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(isSelected ? Color.accentColor : .clear)
-                    )
+        ZStack {
+            RoundedRectangle(cornerRadius: 4)
+                .strokeBorder(isSelected ? Color.accentColor : Color.secondary.opacity(0.3), lineWidth: 1.5)
+                .frame(width: 18, height: 18)
+                .background(
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(isSelected ? Color.accentColor : .clear)
+                )
 
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.white)
-                }
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.white)
             }
         }
-        .buttonStyle(.plain)
+        .frame(width: 28, height: 28)
+        .contentShape(Rectangle())
+        .highPriorityGesture(
+            TapGesture().onEnded {
+                onToggleSelect()
+            }
+        )
         .padding(.trailing, 10)
+        .zIndex(3)
     }
 
     // MARK: - Body Zone
@@ -91,9 +96,12 @@ struct ClipItemRow: View {
                     textContent
                 }
             }
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
     }
 
     private var typeBadge: some View {

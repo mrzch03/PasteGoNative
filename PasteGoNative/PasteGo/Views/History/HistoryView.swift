@@ -55,7 +55,10 @@ struct HistoryView: View {
                                     isFocused: clipboardVM.focusIndex == index,
                                     isExpanded: clipboardVM.isExpanded(clip.id),
                                     onToggleSelect: { clipboardVM.toggleSelect(clip.id) },
-                                    onCopyAndPaste: { pasteService.copyAndPaste(content: clip.content) },
+                                    onCopyAndPaste: {
+                                        clipboardVM.markUsed(id: clip.id)
+                                        pasteService.copyAndPaste(content: clip.content)
+                                    },
                                     onTogglePin: { clipboardVM.togglePin(id: clip.id) },
                                     onDelete: { clipboardVM.deleteClip(id: clip.id) },
                                     onToggleExpand: { clipboardVM.toggleExpand(clip.id) },

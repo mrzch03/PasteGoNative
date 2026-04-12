@@ -83,6 +83,15 @@ final class ClipboardViewModel {
         }
     }
 
+    func markUsed(id: String) {
+        do {
+            try clipRepo.bumpUpdatedAt(id: id)
+            fetchClips()
+        } catch {
+            print("Failed to mark clip as used: \(error)")
+        }
+    }
+
     func togglePin(id: String) {
         do {
             let newState = try clipRepo.togglePin(id: id)
@@ -127,6 +136,19 @@ final class ClipboardViewModel {
         selectedIds.removeAll()
     }
 
+    func selectOnly(id: String) {
+        selectedIds = [id]
+    }
+
+    func deselect(_ id: String) {
+        selectedIds.remove(id)
+    }
+
+    func selectFirstMatchingText(_ text: String) {
+        guard let item = clips.first(where: { $0.content == text }) else { return }
+        selectOnly(id: item.id)
+    }
+
     func deleteSelected() {
         for id in selectedIds {
             deleteClip(id: id)
@@ -136,6 +158,15 @@ final class ClipboardViewModel {
 
     func getSelectedItems() -> [ClipItem] {
         clips.filter { selectedIds.contains($0.id) }
+    }
+
+    func latestItem() -> ClipItem? {
+        do {
+            return try clipRepo.fetchLatest()
+        } catch {
+            print("Failed to fetch latest clip: \(error)")
+            return clips.max(by: { $0.createdAt < $1.createdAt })
+        }
     }
 
     // MARK: - Expand/Collapse

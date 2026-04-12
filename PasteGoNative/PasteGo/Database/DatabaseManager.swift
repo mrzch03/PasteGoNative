@@ -75,10 +75,33 @@ final class DatabaseManager: Sendable {
                 try db.execute(sql: """
                     INSERT INTO templates (id, name, prompt, category, shortcut)
                     VALUES ('tpl-translate', '翻译',
-                            '请将以下内容翻译为中文（如已是中文则翻译为英文）：\n\n{{materials}}',
+                            '你是一名专业翻译助手。请先判断“原文”的主要语言：如果原文是中文，则翻译成自然、准确的英文；如果原文是其他语言，则翻译成简体中文。只输出译文，不要解释，不要重复原文，不要说明你采用了什么规则。\n\n原文：\n{{materials}}',
                             'general', 'cmd+shift+t')
                     """)
             }
+        }
+
+        migrator.registerMigration("v2_backfillTranslateTemplate") { db in
+            try db.execute(sql: """
+                UPDATE templates
+                SET shortcut = 'cmd+shift+t'
+                WHERE id = 'tpl-translate' AND (shortcut IS NULL OR TRIM(shortcut) = '')
+                """)
+
+            try db.execute(sql: """
+                UPDATE templates
+                SET prompt = '你是一名专业翻译助手。请先判断“原文”的主要语言：如果原文是中文，则翻译成自然、准确的英文；如果原文是其他语言，则翻译成简体中文。只输出译文，不要解释，不要重复原文，不要说明你采用了什么规则。\n\n原文：\n{{materials}}'
+                WHERE id = 'tpl-translate'
+                  AND prompt = '请将以下内容翻译为中文（如已是中文则翻译为英文）：\n\n{{materials}}'
+                """)
+        }
+
+        migrator.registerMigration("v3_refreshTranslateTemplatePrompt") { db in
+            try db.execute(sql: """
+                UPDATE templates
+                SET prompt = '你是一名专业翻译助手。请先判断“原文”的主要语言：如果原文是中文，则翻译成自然、准确的英文；如果原文是其他语言，则翻译成简体中文。只输出译文，不要解释，不要重复原文，不要说明你采用了什么规则。\n\n原文：\n{{materials}}'
+                WHERE id = 'tpl-translate'
+                """)
         }
 
         try migrator.migrate(dbPool)

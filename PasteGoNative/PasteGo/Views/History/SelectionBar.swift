@@ -51,12 +51,12 @@ struct SelectionBar: View {
                 // Delete selected
                 barButton(icon: "trash", tooltip: "删除选中", tint: .red, action: onDeleteSelected)
 
-                // AI Generate
+                // Open workbench
                 Button(action: onGenerate) {
                     HStack(spacing: 4) {
-                        Image(systemName: "sparkles")
+                        Image(systemName: "square.on.square")
                             .font(.system(size: 11))
-                        Text("AI 生成")
+                        Text("工作台")
                             .font(.system(size: 12, weight: .medium))
                     }
                     .padding(.horizontal, 10)

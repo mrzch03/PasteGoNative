@@ -56,6 +56,26 @@ struct ClipRepository {
         }
     }
 
+    /// Refresh a clip's timestamp so recent-use ordering moves it to the top
+    func bumpUpdatedAt(id: String, timestamp: String = ISO8601DateFormatter().string(from: Date())) throws {
+        try db.dbPool.write { db in
+            try db.execute(
+                sql: "UPDATE clip_items SET created_at = ? WHERE id = ?",
+                arguments: [timestamp, id]
+            )
+        }
+    }
+
+    /// Fetch the most recently copied clip, ignoring pin order
+    func fetchLatest() throws -> ClipItem? {
+        try db.dbPool.read { db in
+            try ClipItem.fetchOne(
+                db,
+                sql: "SELECT * FROM clip_items ORDER BY created_at DESC LIMIT 1"
+            )
+        }
+    }
+
     /// Toggle pin status, returns new state
     func togglePin(id: String) throws -> Bool {
         try db.dbPool.write { db in

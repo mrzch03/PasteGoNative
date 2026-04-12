@@ -192,7 +192,7 @@ enum AIError: LocalizedError {
         case .apiError(let code, let body):
             "API error \(code): \(body)"
         case .noProvider:
-            "No AI provider configured. Please add one in Settings."
+            "尚未配置 AI 模型。请先到“设置”里添加并设为默认模型。"
         }
     }
 }

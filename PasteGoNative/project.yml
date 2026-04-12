@@ -25,9 +25,6 @@ packages:
   HotKey:
     url: https://github.com/soffes/HotKey.git
     from: "0.2.1"
-  KeyboardShortcuts:
-    url: https://github.com/sindresorhus/KeyboardShortcuts.git
-    from: "2.0.0"
   MarkdownUI:
     url: https://github.com/gonzalezreal/swift-markdown-ui.git
     from: "2.4.0"
@@ -46,7 +43,6 @@ targets:
     dependencies:
       - package: GRDB
       - package: HotKey
-      - package: KeyboardShortcuts
       - package: MarkdownUI
     entitlements:
       path: PasteGo/PasteGo.entitlements

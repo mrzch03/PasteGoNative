@@ -1,56 +1,51 @@
 import SwiftUI
 
-/// Horizontal scrolling template card selector
+/// Horizontal scrolling quick action selector
 struct TemplateCardSelector: View {
     let templates: [Template]
     let activeTemplateId: String?
-    let isCustomMode: Bool
     let isGenerating: Bool
+    let canTriggerTemplates: Bool
     var onSelectTemplate: (Template) -> Void
-    var onSelectCustom: () -> Void
     var onNavigateSettings: () -> Void
 
     private let templateColors: [Color] = [
-        .blue, .green, .orange, .purple, .pink, .red, .cyan, .teal,
+        Color(red: 0.24, green: 0.46, blue: 0.86),
+        Color(red: 0.28, green: 0.56, blue: 0.52),
+        Color(red: 0.74, green: 0.49, blue: 0.24),
+        Color(red: 0.49, green: 0.43, blue: 0.72),
+        Color(red: 0.73, green: 0.45, blue: 0.57),
+        Color(red: 0.50, green: 0.46, blue: 0.41),
     ]
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                // Custom mode card
-                TemplateCard(
-                    emoji: "bubble.left.fill",
-                    label: "自定义",
-                    color: .purple,
-                    isActive: isCustomMode,
-                    action: onSelectCustom
-                )
-
-                // Template cards
                 ForEach(Array(templates.enumerated()), id: \.element.id) { index, template in
-                    TemplateCard(
+                    TemplateChip(
                         emoji: templateIcon(for: template),
                         label: template.name,
                         color: templateColors[index % templateColors.count],
                         isActive: activeTemplateId == template.id,
+                        isEnabled: canTriggerTemplates,
                         action: {
-                            if !isGenerating {
+                            if canTriggerTemplates && !isGenerating {
                                 onSelectTemplate(template)
                             }
                         }
                     )
                 }
 
-                // Settings card
-                TemplateCard(
+                TemplateChip(
                     emoji: "gearshape",
-                    label: "管理",
-                    color: .gray,
+                    label: "管理快捷操作",
+                    color: Color.secondary.opacity(0.9),
                     isActive: false,
+                    isEnabled: true,
                     action: onNavigateSettings
                 )
             }
-            .padding(.horizontal, 16)
+            .padding(.vertical, 2)
         }
     }
 
@@ -62,40 +57,40 @@ struct TemplateCardSelector: View {
     }
 }
 
-/// A single template selection card
-private struct TemplateCard: View {
+private struct TemplateChip: View {
     let emoji: String
     let label: String
     let color: Color
     let isActive: Bool
+    let isEnabled: Bool
     var action: () -> Void
-
-    @State private var isHovering = false
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 6) {
+            HStack(spacing: 6) {
                 Image(systemName: emoji)
-                    .font(.system(size: 18))
-                    .foregroundStyle(isActive ? .white : color)
+                    .font(.system(size: 11))
+                    .foregroundStyle(isActive ? color : .secondary)
 
                 Text(label)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(isActive ? .white : .primary)
+                    .foregroundStyle(isActive ? .primary : .primary)
             }
-            .frame(width: 70, height: 70)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
             .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(isActive ? color : color.opacity(isHovering ? 0.12 : 0.06))
+                isActive
+                    ? color.opacity(0.12)
+                    : Color.primary.opacity(0.05)
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(isActive ? .clear : color.opacity(0.2), lineWidth: 1)
-            )
+            .overlay {
+                Capsule()
+                    .strokeBorder(isActive ? color.opacity(0.3) : Color.primary.opacity(0.06), lineWidth: 1)
+            }
+            .clipShape(Capsule())
         }
         .buttonStyle(.plain)
-        .onHover { isHovering = $0 }
-        .scaleEffect(isHovering ? 1.03 : 1.0)
-        .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isHovering)
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1 : 0.45)
     }
 }

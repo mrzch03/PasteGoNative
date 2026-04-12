@@ -12,47 +12,29 @@ struct OutputView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Header
-            HStack {
-                Text("生成结果")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.secondary)
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("生成结果")
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12, weight: .semibold))
+                }
                 Spacer()
                 if !output.isEmpty && !isGenerating {
-                    Button {
-                        let pasteboard = NSPasteboard.general
-                        pasteboard.clearContents()
-                        pasteboard.setString(parsed.content.isEmpty ? output : parsed.content, forType: .string)
-                        copied = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copied = false }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: copied ? "checkmark" : "doc.on.doc")
-                                .font(.system(size: 11))
-                            Text(copied ? "已复制" : "复制结果")
-                                .font(.system(size: 11))
-                        }
-                        .foregroundStyle(copied ? .green : .accentColor)
-                    }
-                    .buttonStyle(.plain)
+                    copyButton
                 }
             }
-            .padding(.horizontal, 16)
 
-            // Think block
             if !parsed.thinking.isEmpty {
                 ThinkBlockView(
                     thinking: parsed.thinking,
                     isExpanded: $thinkExpanded
                 )
-                .padding(.horizontal, 12)
             }
 
-            // Main content (Markdown)
             VStack(alignment: .leading) {
                 if !parsed.content.isEmpty {
                     Markdown(parsed.content)
-                        .markdownTheme(.gitHub)
+                        .markdownTheme(.pasteGo)
                         .font(.system(size: 13))
                         .textSelection(.enabled)
                 } else if isGenerating && parsed.thinking.isEmpty {
@@ -65,13 +47,80 @@ struct OutputView: View {
                     BlinkingCursor()
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.primary.opacity(0.03))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+            )
         }
-        .padding(.vertical, 12)
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 4)
     }
+
+    private var copyButton: some View {
+        Button {
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            pasteboard.setString(parsed.content.isEmpty ? output : parsed.content, forType: .string)
+            copied = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copied = false }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: copied ? "checkmark.circle.fill" : "doc.on.doc")
+                    .font(.system(size: 12, weight: .semibold))
+                Text(copied ? "已复制" : "复制结果")
+                    .font(.system(size: 11, weight: .semibold))
+            }
+            .foregroundStyle(copied ? Color.green : Color.accentColor)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(Color.primary.opacity(0.045))
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private extension Theme {
+    static let pasteGo = Theme.gitHub
+        .text {
+            ForegroundColor(.primary)
+            BackgroundColor(nil)
+            FontSize(16)
+        }
+        .code {
+            FontFamilyVariant(.monospaced)
+            FontSize(.em(0.85))
+            BackgroundColor(Color.primary.opacity(0.06))
+        }
+        .paragraph { configuration in
+            configuration.label
+                .fixedSize(horizontal: false, vertical: true)
+                .relativeLineSpacing(.em(0.22))
+                .markdownMargin(top: 0, bottom: 12)
+                .markdownTextStyle {
+                    BackgroundColor(nil)
+                }
+        }
+        .codeBlock { configuration in
+            ScrollView(.horizontal) {
+                configuration.label
+                    .fixedSize(horizontal: false, vertical: true)
+                    .relativeLineSpacing(.em(0.225))
+                    .markdownTextStyle {
+                        FontFamilyVariant(.monospaced)
+                        FontSize(.em(0.85))
+                        BackgroundColor(nil)
+                    }
+                    .padding(12)
+            }
+            .background(Color.primary.opacity(0.04))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .markdownMargin(top: 0, bottom: 12)
+        }
 }
 
 /// Collapsible think block
@@ -106,15 +155,15 @@ struct ThinkBlockView: View {
                 Text(thinking)
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
-                    .padding(8)
+                    .padding(10)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.primary.opacity(0.03))
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .background(Color.primary.opacity(0.035))
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .padding(8)
-        .background(Color.primary.opacity(0.02))
+        .background(Color.primary.opacity(0.025))
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }

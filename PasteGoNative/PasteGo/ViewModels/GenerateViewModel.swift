@@ -1,16 +1,23 @@
 import Foundation
+import NaturalLanguage
 import SwiftUI
 
 /// ViewModel for AI generation view
 @Observable
 final class GenerateViewModel {
-    var output: String = ""
-    var isGenerating = false
-    var error: String?
+    var workbenchOutput: String = ""
+    var shortcutOutput: String = ""
+    var workbenchIsGenerating = false
+    var shortcutIsGenerating = false
+    var workbenchError: String?
+    var shortcutError: String?
     var activeTemplateId: String?
     var isCustomMode = false
     var customPrompt: String = ""
-    var thinkExpanded = false
+    var workbenchThinkExpanded = false
+    var shortcutThinkExpanded = false
+    var quickActionSourceText: String?
+    var quickActionSourceType: ClipType?
 
     var templates: [Template] = []
     var providers: [AiProvider] = []
@@ -30,8 +37,12 @@ final class GenerateViewModel {
     }
 
     /// Parsed output: separates <think> blocks from main content
-    var parsedOutput: (thinking: String, content: String) {
-        parseOutput(output)
+    var workbenchParsedOutput: (thinking: String, content: String) {
+        parseOutput(workbenchOutput)
+    }
+
+    var shortcutParsedOutput: (thinking: String, content: String) {
+        parseOutput(shortcutOutput)
     }
 
     // MARK: - Data loading
@@ -55,12 +66,13 @@ final class GenerateViewModel {
     // MARK: - Generation
 
     func generate(items: [ClipItem], template: Template?, customPrompt: String, providerId: String? = nil) {
+        let target: GenerateTarget = template == nil ? .workbench : .shortcuts
         // Build the prompt
         let materials = items.map(\.content).joined(separator: "\n\n")
-        var prompt: String
+        let prompt: String
 
         if let template {
-            prompt = template.prompt.replacingOccurrences(of: "{{materials}}", with: materials)
+            prompt = buildTemplatePrompt(template: template, materials: materials)
             activeTemplateId = template.id
             isCustomMode = false
         } else {
@@ -77,16 +89,17 @@ final class GenerateViewModel {
         }
 
         guard let provider else {
-            error = "No AI provider configured. Please add one in Settings."
+            setError("尚未配置 AI 模型。请先到“设置”里添加并设为默认模型。", for: target)
             return
         }
 
         // Cancel any existing generation
         generateTask?.cancel()
 
-        output = ""
-        error = nil
-        isGenerating = true
+        setOutput("", for: target)
+        setError(nil, for: target)
+        setThinkingExpanded(false, for: target)
+        setGenerating(true, for: target)
 
         generateTask = Task { @MainActor in
             do {
@@ -94,7 +107,7 @@ final class GenerateViewModel {
                 for try await chunk in stream {
                     if Task.isCancelled { break }
                     if !chunk.content.isEmpty {
-                        output += chunk.content
+                        appendOutput(chunk.content, for: target)
                     }
                     if chunk.done {
                         break
@@ -102,21 +115,105 @@ final class GenerateViewModel {
                 }
             } catch {
                 if !Task.isCancelled {
-                    self.error = error.localizedDescription
+                    self.setError(error.localizedDescription, for: target)
                 }
             }
-            isGenerating = false
+            setGenerating(false, for: target)
         }
     }
 
     func reset() {
         generateTask?.cancel()
-        output = ""
-        error = nil
-        isGenerating = false
         activeTemplateId = nil
         customPrompt = ""
-        thinkExpanded = false
+        resetWorkbench()
+        resetShortcuts()
+    }
+
+    func resetWorkbench() {
+        workbenchOutput = ""
+        workbenchError = nil
+        workbenchIsGenerating = false
+        workbenchThinkExpanded = false
+    }
+
+    func resetShortcuts() {
+        shortcutOutput = ""
+        shortcutError = nil
+        shortcutIsGenerating = false
+        shortcutThinkExpanded = false
+    }
+
+    func setQuickActionSource(text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            quickActionSourceText = nil
+            quickActionSourceType = nil
+            return
+        }
+        quickActionSourceText = trimmed
+        quickActionSourceType = ContentTypeDetector.detect(trimmed)
+    }
+
+    func setShortcutError(_ message: String?) {
+        shortcutError = message
+    }
+
+    private func buildTemplatePrompt(template: Template, materials: String) -> String {
+        guard template.id == "tpl-translate" else {
+            return template.prompt.replacingOccurrences(of: "{{materials}}", with: materials)
+        }
+
+        let targetLanguage = translationTarget(for: materials)
+        switch targetLanguage {
+        case .english:
+            return """
+            You are a professional translator. Translate the following text into natural, accurate English. Output only the translation. Do not explain, do not add notes, and do not repeat the source text.
+
+            Source text:
+            \(materials)
+            """
+        case .simplifiedChinese:
+            return """
+            你是一名专业翻译助手。请将下面的原文翻译成自然、准确的简体中文。只输出译文，不要解释，不要添加注释，也不要重复原文。
+
+            原文：
+            \(materials)
+            """
+        }
+    }
+
+    private func translationTarget(for text: String) -> TranslationTarget {
+        if containsJapaneseKana(text) {
+            return .simplifiedChinese
+        }
+
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(String(text.prefix(2000)))
+
+        switch recognizer.dominantLanguage {
+        case .simplifiedChinese, .traditionalChinese:
+            return .english
+        case .japanese, .korean, .english, .french, .german, .italian, .spanish, .portuguese, .russian:
+            return .simplifiedChinese
+        default:
+            return containsMostlyChinese(text) ? .english : .simplifiedChinese
+        }
+    }
+
+    private func containsJapaneseKana(_ text: String) -> Bool {
+        text.unicodeScalars.contains { scalar in
+            (0x3040...0x309F).contains(scalar.value) || (0x30A0...0x30FF).contains(scalar.value)
+        }
+    }
+
+    private func containsMostlyChinese(_ text: String) -> Bool {
+        let scalars = text.unicodeScalars
+        let cjkCount = scalars.filter { (0x4E00...0x9FFF).contains($0.value) }.count
+        let latinCount = scalars.filter {
+            (0x0041...0x005A).contains($0.value) || (0x0061...0x007A).contains($0.value)
+        }.count
+        return cjkCount > 0 && cjkCount >= latinCount
     }
 
     // MARK: - Parse <think> blocks
@@ -133,4 +230,49 @@ final class GenerateViewModel {
         let content = raw.replacingCharacters(in: range, with: "").trimmingCharacters(in: .whitespacesAndNewlines)
         return (thinking, content)
     }
+
+    private func setOutput(_ value: String, for target: GenerateTarget) {
+        switch target {
+        case .workbench: workbenchOutput = value
+        case .shortcuts: shortcutOutput = value
+        }
+    }
+
+    private func appendOutput(_ value: String, for target: GenerateTarget) {
+        switch target {
+        case .workbench: workbenchOutput += value
+        case .shortcuts: shortcutOutput += value
+        }
+    }
+
+    private func setError(_ value: String?, for target: GenerateTarget) {
+        switch target {
+        case .workbench: workbenchError = value
+        case .shortcuts: shortcutError = value
+        }
+    }
+
+    private func setGenerating(_ value: Bool, for target: GenerateTarget) {
+        switch target {
+        case .workbench: workbenchIsGenerating = value
+        case .shortcuts: shortcutIsGenerating = value
+        }
+    }
+
+    private func setThinkingExpanded(_ value: Bool, for target: GenerateTarget) {
+        switch target {
+        case .workbench: workbenchThinkExpanded = value
+        case .shortcuts: shortcutThinkExpanded = value
+        }
+    }
+}
+
+private enum TranslationTarget {
+    case english
+    case simplifiedChinese
+}
+
+private enum GenerateTarget {
+    case workbench
+    case shortcuts
 }

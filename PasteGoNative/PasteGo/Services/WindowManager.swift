@@ -6,6 +6,9 @@ import CoreGraphics
 final class WindowManager {
     private(set) var panel: FloatingPanel?
     private var previousApp: NSRunningApplication?
+    private var hasPositionedPanel = false
+    var isVisible: Bool { panel?.isVisible ?? false }
+    var capturedFrontmostApp: NSRunningApplication? { previousApp }
 
     func setPanel(_ panel: FloatingPanel) {
         self.panel = panel
@@ -14,6 +17,13 @@ final class WindowManager {
     /// Save the currently frontmost app before showing our panel
     func savePreviousApp() {
         previousApp = NSWorkspace.shared.frontmostApplication
+    }
+
+    func captureCurrentFrontmostApp() {
+        let frontmost = NSWorkspace.shared.frontmostApplication
+        if frontmost?.bundleIdentifier != Bundle.main.bundleIdentifier {
+            previousApp = frontmost
+        }
     }
 
     /// Reactivate the previously saved frontmost app
@@ -25,9 +35,36 @@ final class WindowManager {
     func show() {
         guard let panel else { return }
         savePreviousApp()
-        positionNearMouse()
+        if !hasPositionedPanel {
+            positionNearMouse()
+            hasPositionedPanel = true
+        }
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    /// Bring the existing panel to the front without repositioning or overwriting previous app state
+    func focusVisiblePanel() {
+        guard let panel, panel.isVisible else { return }
+        panel.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    /// Show the panel without moving it or overwriting previous app state
+    func showPreservingFrame() {
+        guard let panel else { return }
+        panel.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    /// Show the panel at its current frame without activating the app
+    func showWithoutActivation() {
+        guard let panel else { return }
+        if !hasPositionedPanel {
+            positionNearMouse()
+            hasPositionedPanel = true
+        }
+        panel.orderFrontRegardless()
     }
 
     /// Hide the panel

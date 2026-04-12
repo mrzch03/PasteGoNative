@@ -18,6 +18,8 @@ final class SettingsViewModel {
 
     private let providerRepo: ProviderRepository
     private let templateRepo: TemplateRepository
+    var onProviderSaved: (() -> Void)?
+    var onProvidersChanged: (() -> Void)?
     var onTemplatesChanged: (() -> Void)?
 
     init(providerRepo: ProviderRepository, templateRepo: TemplateRepository) {
@@ -66,6 +68,8 @@ final class SettingsViewModel {
             try providerRepo.upsert(providerForm)
             fetchAll()
             isEditingProvider = false
+            onProvidersChanged?()
+            onProviderSaved?()
         } catch {
             print("Failed to save provider: \(error)")
         }
@@ -75,6 +79,7 @@ final class SettingsViewModel {
         do {
             try providerRepo.delete(id: id)
             fetchAll()
+            onProvidersChanged?()
         } catch {
             print("Failed to delete provider: \(error)")
         }

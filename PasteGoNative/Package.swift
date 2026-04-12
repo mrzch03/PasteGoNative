@@ -7,7 +7,6 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/groue/GRDB.swift.git", from: "7.0.0"),
         .package(url: "https://github.com/soffes/HotKey.git", from: "0.2.1"),
-        .package(url: "https://github.com/sindresorhus/KeyboardShortcuts.git", from: "2.0.0"),
         .package(url: "https://github.com/gonzalezreal/swift-markdown-ui.git", from: "2.4.0"),
     ],
     targets: [
@@ -16,13 +15,13 @@ let package = Package(
             dependencies: [
                 .product(name: "GRDB", package: "GRDB.swift"),
                 .product(name: "HotKey", package: "HotKey"),
-                .product(name: "KeyboardShortcuts", package: "KeyboardShortcuts"),
                 .product(name: "MarkdownUI", package: "swift-markdown-ui"),
             ],
             path: "PasteGo",
             exclude: ["Info.plist", "PasteGo.entitlements"],
             resources: [
                 .process("Assets.xcassets"),
+                .process("Resources"),
             ]
         ),
     ]

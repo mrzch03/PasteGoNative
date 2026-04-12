@@ -100,38 +100,101 @@ struct TemplateFormView: View {
 struct ShortcutRecorderField: View {
     @Binding var shortcut: String?
     @Binding var isRecording: Bool
+    @FocusState private var isFocused: Bool
 
     var body: some View {
-        Text(isRecording ? "请按下快捷键组合..." : (shortcut ?? "点击此处录制快捷键"))
-            .font(.system(size: 12, design: shortcut != nil ? .monospaced : .default))
-            .foregroundStyle(isRecording ? Color.accentColor : (shortcut != nil ? Color.primary : Color.secondary))
-            .frame(maxWidth: .infinity, alignment: .leading)
+        recorderLabel
             .contentShape(Rectangle())
-            .onTapGesture {
-                isRecording = true
+            .focusable()
+            .focused($isFocused)
+            .onTapGesture(perform: beginRecording)
+            .onChange(of: isRecording) { _, newValue in
+                isFocused = newValue
             }
-            .onKeyPress(phases: .down) { press in
-                guard isRecording else { return .ignored }
+            .onKeyPress(phases: .down, action: handleKeyPress)
+    }
 
-                // Need at least one modifier
-                let mods = press.modifiers
-                guard mods.contains(.command) || mods.contains(.control) || mods.contains(.option) else {
-                    return .ignored
-                }
+    private var displayText: String {
+        if isRecording {
+            return "请按下快捷键组合..."
+        }
+        return shortcut ?? "点击此处录制快捷键"
+    }
 
-                var parts: [String] = []
-                if mods.contains(.command) || mods.contains(.control) { parts.append("CmdOrCtrl") }
-                if mods.contains(.option) { parts.append("Alt") }
-                if mods.contains(.shift) { parts.append("Shift") }
+    private var recorderLabel: some View {
+        let fontDesign: Font.Design = shortcut != nil ? .monospaced : .default
+        let foreground: Color = isRecording
+            ? .accentColor
+            : (shortcut != nil ? .primary : .secondary)
 
-                let key = press.characters.uppercased()
-                if !key.isEmpty && key != " " {
-                    parts.append(key)
-                    shortcut = parts.joined(separator: "+")
-                    isRecording = false
-                    return .handled
-                }
-                return .ignored
+        return Text(displayText)
+            .font(.system(size: 12, design: fontDesign))
+            .foregroundStyle(foreground)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 8)
+            .background(isRecording ? Color.accentColor.opacity(0.08) : .clear)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+    }
+
+    private func beginRecording() {
+        isRecording = true
+        isFocused = true
+    }
+
+    private func handleKeyPress(_ press: KeyPress) -> KeyPress.Result {
+        guard isRecording else { return .ignored }
+
+        if press.key == .escape {
+            isRecording = false
+            return .handled
+        }
+
+        if press.key == .delete {
+            shortcut = nil
+            isRecording = false
+            return .handled
+        }
+
+        let mods = press.modifiers
+        guard mods.contains(.command) || mods.contains(.control) || mods.contains(.option) else {
+            return .handled
+        }
+
+        guard let key = normalizedKey(from: press.characters) else {
+            return .handled
+        }
+
+        var parts: [String] = []
+        if mods.contains(.command) || mods.contains(.control) { parts.append("CmdOrCtrl") }
+        if mods.contains(.option) { parts.append("Alt") }
+        if mods.contains(.shift) { parts.append("Shift") }
+        parts.append(key)
+
+        shortcut = parts.joined(separator: "+")
+        isRecording = false
+        return .handled
+    }
+
+    private func normalizedKey(from characters: String) -> String? {
+        let trimmed = characters.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        if trimmed == " " {
+            return "SPACE"
+        }
+
+        if trimmed.count == 1, let scalar = trimmed.unicodeScalars.first {
+            if CharacterSet.alphanumerics.contains(scalar) {
+                return String(trimmed.uppercased())
             }
+        }
+
+        switch trimmed.lowercased() {
+        case "return", "\r": return "ENTER"
+        case "tab", "\t": return "TAB"
+        case "space": return "SPACE"
+        default: return nil
+        }
     }
 }

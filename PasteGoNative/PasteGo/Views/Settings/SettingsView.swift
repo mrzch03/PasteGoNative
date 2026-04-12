@@ -1,47 +1,24 @@
 import SwiftUI
 
-/// Main settings view with provider and template management
+/// Main settings view with provider and quick action management
 struct SettingsView: View {
     let settingsVM: SettingsViewModel
     var onBack: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack {
-                Button(action: onBack) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 12, weight: .semibold))
-                        Text("返回")
-                            .font(.system(size: 13))
-                    }
-                    .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-
-                Spacer()
-
-                Text("设置")
-                    .font(.system(size: 14, weight: .semibold))
-
-                Spacer()
-                Color.clear.frame(width: 50)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-
             ScrollView {
                 VStack(spacing: 20) {
                     // AI Providers section
                     providerSection
 
-                    // Templates section
+                    // Quick actions section
                     templateSection
 
                     // Shortcuts info section
                     shortcutsSection
                 }
+                .padding(.top, 12)
                 .padding(.bottom, 20)
             }
         }
@@ -109,14 +86,14 @@ struct SettingsView: View {
 
     private var templateSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionHeader(title: "模板", showAdd: !settingsVM.isEditingTemplate) {
+            sectionHeader(title: "快捷操作", showAdd: !settingsVM.isEditingTemplate) {
                 settingsVM.startAddTemplate()
             }
 
             if settingsVM.isEditingTemplate {
                 TemplateFormView(settingsVM: settingsVM)
             } else if settingsVM.templates.isEmpty {
-                emptyPlaceholder(icon: "doc.text", message: "尚未添加模板", hint: "点击上方「添加」按钮创建模板")
+                emptyPlaceholder(icon: "bolt", message: "尚未添加快捷操作", hint: "点击上方「添加」按钮创建快捷操作")
             } else {
                 ForEach(settingsVM.templates) { template in
                     templateRow(template)
