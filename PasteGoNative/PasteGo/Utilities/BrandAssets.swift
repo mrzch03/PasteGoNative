@@ -10,7 +10,7 @@ enum BrandAssets {
     }
 
     private static func loadImage(named name: String, ext: String) -> NSImage? {
-        guard let url = Bundle.module.url(forResource: name, withExtension: ext) else {
+        guard let url = Bundle.main.url(forResource: name, withExtension: ext) else {
             return nil
         }
         return NSImage(contentsOf: url)

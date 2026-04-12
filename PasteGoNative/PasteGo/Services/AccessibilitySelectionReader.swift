@@ -139,10 +139,10 @@ struct AccessibilitySelectionReader {
     }
 
     private func selectedTextFromMarkerRange(on element: AXUIElement) -> String? {
-        guard let markerRange = copyAttributeValue(element, attribute: kAXSelectedTextMarkerRangeAttribute as CFString),
+        guard let markerRange = copyAttributeValue(element, attribute: "AXSelectedTextMarkerRange" as CFString),
               let value = copyParameterizedAttributeValue(
                 element,
-                attribute: kAXStringForTextMarkerRangeParameterizedAttribute as CFString,
+                attribute: "AXStringForTextMarkerRange" as CFString,
                 parameter: markerRange
               ) as? String
         else {
