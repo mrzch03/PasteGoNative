@@ -1,0 +1,20 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserdata
+xcuserdata/
+*.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# macOS
+.DS_Store
+*.swp
+*.lock
+profile.xcconfig
+
+# Auto-generated Xcode project (use xcodegen generate)
+PasteGo.xcodeproj/

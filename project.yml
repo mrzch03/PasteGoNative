@@ -1,0 +1,48 @@
+name: PasteGo
+options:
+  bundleIdPrefix: com.pastego
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "16.0"
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    PRODUCT_BUNDLE_IDENTIFIER: com.pastego.dev
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    INFOPLIST_KEY_LSUIElement: YES
+    CODE_SIGN_ENTITLEMENTS: PasteGo/PasteGo.entitlements
+    INFOPLIST_FILE: PasteGo/Info.plist
+    ENABLE_HARDENED_RUNTIME: YES
+
+packages:
+  GRDB:
+    url: https://github.com/groue/GRDB.swift.git
+    from: "7.0.0"
+  HotKey:
+    url: https://github.com/soffes/HotKey.git
+    from: "0.2.1"
+  MarkdownUI:
+    url: https://github.com/gonzalezreal/swift-markdown-ui.git
+    from: "2.4.0"
+
+targets:
+  PasteGo:
+    type: application
+    platform: macOS
+    sources:
+      - PasteGo
+    settings:
+      base:
+        PRODUCT_NAME: PasteGo
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - package: GRDB
+      - package: HotKey
+      - package: MarkdownUI
+    entitlements:
+      path: PasteGo/PasteGo.entitlements
