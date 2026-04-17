@@ -27,6 +27,11 @@ profile
 *.mobileprovision
 *.provisionprofile
 
+# Distribution
+dist/
+*.dmg
+*.zip
+
 # Misc
 *.mov
 *.mp4
