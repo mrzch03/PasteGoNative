@@ -37,6 +37,7 @@ struct MainContentView: View {
                             clipboardVM: clipboardVM,
                             pasteService: pasteService,
                             onStartGenerate: {
+                                generateVM.prepareWorkbench()
                                 generateVM.resetWorkbench()
                                 appVM.viewMode = .generate
                             }

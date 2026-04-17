@@ -1,38 +1,6 @@
-# Xcode
-build/
+.build/
+.xcode-build/
 DerivedData/
 *.xcuserdata
-*.xcworkspace/xcuserdata/
 xcuserdata/
-
-# Swift Package Manager
-.build/
-Packages/
-Package.pins
-Package.resolved
-
-# macOS
 .DS_Store
-*.swp
-*.lock
-profile
-
-# Archive
-*.xcarchive
-*.ipa
-*.dSYM.zip
-*.dSYM
-
-# Signing
-*.mobileprovision
-*.provisionprofile
-
-# Distribution
-dist/
-*.dmg
-*.zip
-
-# Misc
-*.mov
-*.mp4
-ExportOptions.plist

@@ -11,7 +11,7 @@ final class AIStreamingService {
     /// Stream a generation request, yielding chunks as they arrive
     func generate(provider: AiProvider, prompt: String) -> AsyncThrowingStream<StreamChunk, Error> {
         AsyncThrowingStream { continuation in
-            Task {
+            let producerTask = Task {
                 do {
                     switch provider.kind {
                     case .openai, .kimi, .minimax:
@@ -33,6 +33,10 @@ final class AIStreamingService {
                 } catch {
                     continuation.finish(throwing: error)
                 }
+            }
+
+            continuation.onTermination = { _ in
+                producerTask.cancel()
             }
         }
     }

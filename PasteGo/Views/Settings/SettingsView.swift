@@ -110,7 +110,7 @@ struct SettingsView: View {
                     Text(template.name)
                         .font(.system(size: 13, weight: .medium))
                     if let shortcut = template.shortcut {
-                        Text(shortcut)
+                        Text(ShortcutDisplayFormatter.format(shortcut))
                             .font(.system(size: 9, weight: .medium, design: .monospaced))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -162,7 +162,7 @@ struct SettingsView: View {
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
             Spacer()
-            Text(shortcut)
+            Text(ShortcutDisplayFormatter.format(shortcut))
                 .font(.system(size: 11, weight: .medium, design: .monospaced))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
@@ -241,5 +241,35 @@ extension Color {
         let g = Double((int >> 8) & 0xFF) / 255
         let b = Double(int & 0xFF) / 255
         self.init(red: r, green: g, blue: b)
+    }
+}
+
+enum ShortcutDisplayFormatter {
+    static func format(_ shortcut: String) -> String {
+        shortcut
+            .split(separator: "+")
+            .map { normalizeToken(String($0)) }
+            .joined(separator: " + ")
+    }
+
+    private static func normalizeToken(_ token: String) -> String {
+        switch token.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "cmdorctrl", "cmd", "command":
+            return "Cmd"
+        case "ctrl", "control":
+            return "Ctrl"
+        case "alt", "option":
+            return "Option"
+        case "shift":
+            return "Shift"
+        case "enter", "return":
+            return "Enter"
+        case "space":
+            return "Space"
+        case "tab":
+            return "Tab"
+        default:
+            return token.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        }
     }
 }

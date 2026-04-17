@@ -144,6 +144,12 @@ final class GenerateViewModel {
         shortcutThinkExpanded = false
     }
 
+    func prepareWorkbench() {
+        activeTemplateId = nil
+        isCustomMode = true
+        workbenchError = nil
+    }
+
     func setQuickActionSource(text: String) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
@@ -161,7 +167,17 @@ final class GenerateViewModel {
 
     private func buildTemplatePrompt(template: Template, materials: String) -> String {
         guard template.id == "tpl-translate" else {
-            return template.prompt.replacingOccurrences(of: "{{materials}}", with: materials)
+            let prompt = template.prompt
+            if prompt.contains("{{materials}}") {
+                return prompt.replacingOccurrences(of: "{{materials}}", with: materials)
+            }
+
+            return """
+            \(prompt)
+
+            素材:
+            \(materials)
+            """
         }
 
         let targetLanguage = translationTarget(for: materials)

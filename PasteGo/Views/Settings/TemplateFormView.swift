@@ -26,7 +26,7 @@ struct TemplateFormView: View {
                 .scrollContentBackground(.hidden)
             }
 
-            Text("使用 {{materials}} 作为素材占位符")
+            Text("可选使用 {{materials}} 指定素材插入位置；不填写时系统会自动在末尾附加素材")
                 .font(.system(size: 10))
                 .foregroundStyle(.tertiary)
 
@@ -118,7 +118,10 @@ struct ShortcutRecorderField: View {
         if isRecording {
             return "请按下快捷键组合..."
         }
-        return shortcut ?? "点击此处录制快捷键"
+        guard let shortcut else {
+            return "点击此处录制快捷键"
+        }
+        return ShortcutDisplayFormatter.format(shortcut)
     }
 
     private var recorderLabel: some View {
@@ -166,7 +169,8 @@ struct ShortcutRecorderField: View {
         }
 
         var parts: [String] = []
-        if mods.contains(.command) || mods.contains(.control) { parts.append("CmdOrCtrl") }
+        if mods.contains(.command) { parts.append("Cmd") }
+        if mods.contains(.control) { parts.append("Ctrl") }
         if mods.contains(.option) { parts.append("Alt") }
         if mods.contains(.shift) { parts.append("Shift") }
         parts.append(key)
